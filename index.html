@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Rico Arcade — Tap Tap</title>
+  <title>Rico Arcade</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,25 +11,26 @@
 
   <style>
     :root{
-      --bg0:#05070f;
-      --bg1:#070b18;
-      --card: rgba(255,255,255,.06);
-      --card2: rgba(255,255,255,.08);
-      --stroke: rgba(255,255,255,.10);
+      --bg0:#040512;
+      --bg1:#060b18;
+
       --text:#eef2ff;
-      --muted:#a7b0cf;
-      --good:#22c55e;
+      --muted:#aab3d4;
+
+      --stroke: rgba(255,255,255,.10);
+      --glass: rgba(255,255,255,.06);
+      --glass2: rgba(255,255,255,.09);
+
+      --c1:#00e5ff;   /* cyan */
+      --c2:#a855f7;   /* purple */
+      --c3:#22c55e;   /* green */
+      --c4:#f9735b;   /* rico orange */
       --warn:#f59e0b;
-      --bad:#ef4444;
 
-      /* Rico accents */
-      --accent:#f9735b;
-      --accent2:#0ea5e9;
-
-      --shadow: 0 12px 40px rgba(0,0,0,.55);
+      --shadow: 0 18px 70px rgba(0,0,0,.65);
       --r: 18px;
 
-      --dailyCap: 500;
+      --cap: 500;
     }
 
     *{box-sizing:border-box}
@@ -39,227 +40,391 @@
       font-family:"Baloo 2", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       color:var(--text);
       background:
-        radial-gradient(900px 700px at 10% 0%, rgba(249,115,91,.18), transparent 60%),
-        radial-gradient(900px 700px at 90% 10%, rgba(14,165,233,.16), transparent 60%),
-        radial-gradient(700px 600px at 50% 110%, rgba(34,197,94,.10), transparent 55%),
+        radial-gradient(1200px 800px at 50% -10%, rgba(0,229,255,.18), transparent 55%),
+        radial-gradient(1200px 800px at 70% 10%, rgba(168,85,247,.16), transparent 55%),
+        radial-gradient(1100px 700px at 20% 110%, rgba(34,197,94,.10), transparent 55%),
         linear-gradient(180deg, var(--bg0), var(--bg1));
-      overflow-x:hidden;
+      overflow:hidden;
+    }
+
+    /* subtle “server room” grid */
+    .gridBg{
+      position:fixed; inset:0;
+      pointer-events:none;
+      opacity:.20;
+      background:
+        linear-gradient(to right, rgba(255,255,255,.05) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px);
+      background-size: 54px 54px;
+      mask-image: radial-gradient(closest-side at 50% 30%, black 35%, transparent 85%);
+    }
+
+    .app{
+      height: 100vh;
+      display:flex;
+      flex-direction:column;
     }
 
     .wrap{
-      max-width: 520px;
+      flex:1;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 14px 14px 96px;
+      padding-bottom: calc(96px + env(safe-area-inset-bottom));
+      max-width: 640px;
       margin: 0 auto;
-      padding: 18px 14px 22px;
-      padding-bottom: calc(22px + env(safe-area-inset-bottom));
+      width: 100%;
     }
 
-    .top{
-      display:flex; align-items:center; justify-content:space-between;
-      gap:12px; margin-top: 6px;
+    /* ===== TOP BAR ===== */
+    .topbar{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding: 6px 2px 12px;
     }
-    .brand{
-      display:flex; align-items:center; gap:10px;
+    .title{
+      display:flex;
+      align-items:center;
+      gap:10px;
       user-select:none;
     }
     .logo{
-      width:38px; height:38px; border-radius:12px;
-      background: radial-gradient(circle at 30% 30%, rgba(249,115,91,.95), rgba(14,165,233,.65) 55%, rgba(255,255,255,.12) 100%);
-      box-shadow: 0 12px 30px rgba(249,115,91,.18), 0 10px 30px rgba(14,165,233,.14);
+      width:38px; height:38px;
+      border-radius: 14px;
+      border:1px solid rgba(255,255,255,.16);
+      background:
+        radial-gradient(circle at 30% 30%, rgba(0,229,255,.9), rgba(168,85,247,.55) 55%, rgba(0,0,0,.35) 100%);
+      box-shadow: 0 18px 50px rgba(0,229,255,.14), 0 18px 50px rgba(168,85,247,.10);
       position:relative;
       overflow:hidden;
     }
     .logo:after{
       content:"";
-      position:absolute; inset:-40%;
-      background: conic-gradient(from 210deg, rgba(255,255,255,.0), rgba(255,255,255,.35), rgba(255,255,255,.0));
-      animation: spin 2.8s linear infinite;
-      opacity:.55;
+      position:absolute; inset:-55%;
+      background: conic-gradient(from 220deg, rgba(255,255,255,0), rgba(255,255,255,.35), rgba(255,255,255,0));
+      opacity:.35;
+      animation: spin 4.8s linear infinite;
     }
-    @keyframes spin {to{transform:rotate(360deg)}}
+    @keyframes spin { to{ transform: rotate(360deg);} }
 
-    .brand h1{
-      font-size: 18px; line-height: 1.05; margin:0;
-      letter-spacing:.2px;
-    }
-    .brand p{
-      margin:2px 0 0; color:var(--muted); font-size:13px;
-    }
+    .title h1{margin:0; font-size:16px; line-height:1.1}
+    .title p{margin:2px 0 0; font-size:12px; color:var(--muted)}
 
-    .pill{
+    .status{
       display:flex; align-items:center; gap:8px;
-      padding:10px 12px;
+      padding: 8px 10px;
       border-radius: 999px;
-      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.05));
-      border: 1px solid var(--stroke);
-      box-shadow: var(--shadow);
-      min-width: 140px;
-      justify-content: space-between;
-    }
-    .pill small{color:var(--muted); font-size:12px}
-    .pill b{font-size:16px}
-
-    .grid{
-      display:grid;
-      grid-template-columns: 1fr;
-      gap: 12px;
-      margin-top: 14px;
-    }
-
-    .card{
-      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.05));
-      border: 1px solid var(--stroke);
-      border-radius: var(--r);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-    .card .hd{
-      padding: 12px 14px;
-      display:flex; align-items:center; justify-content:space-between;
-      gap:10px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      background: radial-gradient(900px 240px at 20% 0%, rgba(249,115,91,.10), transparent 60%);
-    }
-    .card .hd .title{
-      display:flex; flex-direction:column;
-    }
-    .card .hd .title b{font-size:15px}
-    .card .hd .title span{font-size:12px; color:var(--muted)}
-    .chip{
-      padding: 7px 10px;
-      border-radius: 999px;
-      background: rgba(0,0,0,.25);
+      background: rgba(0,0,0,.30);
       border:1px solid rgba(255,255,255,.10);
+      backdrop-filter: blur(12px);
+      font-size:12px;
       color: rgba(255,255,255,.92);
-      font-size: 12px;
-      display:flex; align-items:center; gap:7px;
-      white-space:nowrap;
     }
     .dot{
       width:8px; height:8px; border-radius:999px;
-      background: var(--good);
-      box-shadow: 0 0 14px rgba(34,197,94,.55);
+      background: var(--warn);
+      box-shadow: 0 0 14px rgba(245,158,11,.55);
     }
 
-    .content{
-      padding: 14px;
-    }
-
-    .arena{
-      position: relative;
-      height: 320px;
-      border-radius: 18px;
+    /* ===== HERO (like your “Telegram Arcade”) ===== */
+    .hero{
+      position:relative;
+      border-radius: 24px;
+      padding: 16px 16px 14px;
       background:
-        radial-gradient(900px 260px at 50% 115%, rgba(249,115,91,.18), transparent 60%),
-        radial-gradient(900px 260px at 40% 110%, rgba(14,165,233,.14), transparent 60%),
-        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-      border: 1px solid rgba(255,255,255,.10);
+        radial-gradient(1000px 260px at 10% 0%, rgba(0,229,255,.18), transparent 60%),
+        radial-gradient(1000px 260px at 90% 0%, rgba(168,85,247,.16), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow: var(--shadow);
       overflow:hidden;
+    }
+
+    .hero:before{
+      content:"";
+      position:absolute; inset:-45%;
+      background: conic-gradient(from 200deg,
+        rgba(0,229,255,0),
+        rgba(0,229,255,.16),
+        rgba(168,85,247,.16),
+        rgba(0,229,255,0));
+      filter: blur(14px);
+      opacity:.9;
+      animation: glow 6.5s linear infinite;
+    }
+    @keyframes glow { to { transform: rotate(360deg);} }
+
+    .heroInner{position:relative; z-index:2;}
+
+    .welcome{
+      display:flex; align-items:center; justify-content:space-between;
+      gap: 10px;
+    }
+    .welcomeLeft b{
+      display:block;
+      font-size: 18px;
+      letter-spacing:.3px;
+    }
+    .welcomeLeft span{
+      display:block;
+      margin-top:2px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .chip{
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.25);
+      backdrop-filter: blur(12px);
+      font-size: 12px;
+      color: rgba(255,255,255,.92);
+      white-space: nowrap;
+    }
+
+    .pointsBar{
+      margin-top: 12px;
+      border-radius: 18px;
+      padding: 12px 12px;
+      background: rgba(0,0,0,.24);
+      border: 1px solid rgba(255,255,255,.10);
       display:flex;
       align-items:center;
-      justify-content:center;
+      justify-content:space-between;
+      gap:10px;
+    }
+    .pointsBar .label{
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .pointsBar .num{
+      font-size: 34px;
+      font-weight: 900;
+      letter-spacing:.5px;
+      line-height: 1;
+      text-shadow: 0 14px 40px rgba(0,0,0,.6);
+    }
+    .pointsBar .sub{
+      font-size:12px;
+      color: rgba(255,255,255,.86);
+      text-align:right;
+    }
+
+    .miniMeta{
+      margin-top: 10px;
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+    }
+    .metaCard{
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .metaCard .k{font-size:12px; color:var(--muted)}
+    .metaCard .v{font-size:16px; font-weight:900; margin-top:4px}
+
+    /* ===== GAME ICONS (3 big buttons) ===== */
+    .gameRow{
+      margin-top: 14px;
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+    .gameBtn{
+      position:relative;
+      border-radius: 22px;
+      padding: 14px 12px;
+      background: rgba(0,0,0,.24);
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow: 0 14px 40px rgba(0,0,0,.35);
+      cursor:pointer;
+      user-select:none;
+      overflow:hidden;
+      transition: transform .08s ease, filter .2s ease;
+    }
+    .gameBtn:active{transform: translateY(1px) scale(.99)}
+    .gameBtn:before{
+      content:"";
+      position:absolute; inset:-45%;
+      opacity:.65;
+      filter: blur(18px);
+    }
+    .gameBtn.tap:before{
+      background: radial-gradient(circle at 40% 40%, rgba(0,229,255,.40), transparent 55%);
+    }
+    .gameBtn.plinko:before{
+      background: radial-gradient(circle at 40% 40%, rgba(168,85,247,.40), transparent 55%);
+    }
+    .gameBtn.pet:before{
+      background: radial-gradient(circle at 40% 40%, rgba(34,197,94,.32), transparent 55%);
+    }
+
+    .iconRing{
+      width: 64px; height: 64px;
+      border-radius: 999px;
+      margin: 0 auto;
+      display:grid; place-items:center;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      position:relative;
+      box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset;
+    }
+    .iconRing:after{
+      content:"";
+      position:absolute; inset:-22%;
+      border-radius: 999px;
+      background: conic-gradient(from 210deg, rgba(0,229,255,0), rgba(0,229,255,.20), rgba(168,85,247,.18), rgba(0,229,255,0));
+      filter: blur(12px);
+      opacity:.8;
+      animation: spin 4.5s linear infinite;
+    }
+
+    .icon{
+      width: 34px; height: 34px;
+      position:relative;
+      z-index:2;
+    }
+
+    .gTitle{
+      margin-top: 10px;
+      text-align:center;
+      font-weight: 900;
+      letter-spacing:.2px;
+      font-size: 12px;
+      opacity:.95;
+    }
+    .gSub{
+      margin-top: 2px;
+      text-align:center;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* ===== GAME PANEL (Tap Tap) ===== */
+    .panel{
+      margin-top: 12px;
+      border-radius: 24px;
+      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.05));
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+    }
+    .panelHd{
+      padding: 12px 14px;
+      display:flex; align-items:flex-end; justify-content:space-between;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      background: radial-gradient(900px 240px at 20% 0%, rgba(0,229,255,.12), transparent 60%);
+    }
+    .panelHd b{font-size:15px}
+    .panelHd span{font-size:12px; color:var(--muted)}
+
+    .arena{
+      position:relative;
+      height: 380px;
+      display:grid;
+      place-items:center;
+      overflow:hidden;
       user-select:none;
       -webkit-tap-highlight-color: transparent;
+      background:
+        radial-gradient(900px 260px at 50% 115%, rgba(0,229,255,.14), transparent 60%),
+        radial-gradient(900px 260px at 50% 115%, rgba(168,85,247,.12), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
     }
 
     .ring{
-      width: 260px;
-      height: 260px;
+      width: 290px; height: 290px;
       border-radius: 999px;
-      position: relative;
-      display:grid; place-items:center;
-      filter: drop-shadow(0 18px 38px rgba(0,0,0,.55));
-    }
-
-    .ring svg{
-      position:absolute; inset:0;
-      transform: rotate(-90deg);
-    }
-
-    .orb{
-      width: 180px;
-      height: 180px;
-      border-radius: 999px;
-      background:
-        radial-gradient(circle at 30% 30%, rgba(255,255,255,.18), rgba(255,255,255,0) 40%),
-        radial-gradient(circle at 35% 35%, rgba(249,115,91,.95), rgba(14,165,233,.55) 55%, rgba(0,0,0,.25) 100%);
-      border: 1px solid rgba(255,255,255,.20);
-      box-shadow:
-        0 26px 70px rgba(249,115,91,.14),
-        0 26px 70px rgba(14,165,233,.11),
-        inset 0 0 0 1px rgba(255,255,255,.08);
       position:relative;
       display:grid; place-items:center;
+      filter: drop-shadow(0 20px 50px rgba(0,0,0,.6));
+    }
+    .ring svg{position:absolute; inset:0; transform: rotate(-90deg);}
+
+    .orb{
+      width: 200px; height: 200px;
+      border-radius: 999px;
+      position:relative;
+      display:grid; place-items:center;
+      border:1px solid rgba(255,255,255,.22);
+      background:
+        radial-gradient(circle at 30% 30%, rgba(255,255,255,.20), rgba(255,255,255,0) 45%),
+        radial-gradient(circle at 35% 35%, rgba(0,229,255,.70), rgba(168,85,247,.55) 60%, rgba(0,0,0,.30) 100%);
+      box-shadow:
+        0 34px 90px rgba(0,229,255,.13),
+        0 34px 90px rgba(168,85,247,.10),
+        inset 0 0 0 1px rgba(255,255,255,.08);
       transform: translateZ(0);
       transition: transform .08s ease;
     }
+
     .orb:before{
       content:"";
-      position:absolute; inset:-35%;
+      position:absolute; inset:-45%;
       background: conic-gradient(from 210deg,
-        rgba(249,115,91,0),
-        rgba(249,115,91,.18),
-        rgba(14,165,233,.18),
-        rgba(249,115,91,0));
-      filter: blur(16px);
-      animation: aura 3.2s linear infinite;
-      opacity:.9;
+        rgba(0,229,255,0),
+        rgba(0,229,255,.20),
+        rgba(168,85,247,.18),
+        rgba(0,229,255,0));
+      filter: blur(18px);
+      animation: glow 3.8s linear infinite;
+      opacity:.95;
     }
-    @keyframes aura{to{transform:rotate(360deg)}}
 
-    .orb .score{
-      text-align:center;
+    .orbCore{
       position:relative;
       z-index:2;
       padding: 12px 16px;
       border-radius: 16px;
       background: rgba(0,0,0,.22);
       border: 1px solid rgba(255,255,255,.10);
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(10px);
+      text-align:center;
+      min-width: 160px;
     }
-    .orb .score .big{
-      font-size: 34px;
-      font-weight: 800;
-      letter-spacing:.3px;
-      line-height: 1;
-    }
-    .orb .score .lbl{
-      margin-top: 4px;
-      font-size: 12px;
-      color: var(--muted);
-    }
+    .orbCore .big{font-size: 32px; font-weight:900; line-height:1}
+    .orbCore .lbl{margin-top:5px; font-size:12px; color:var(--muted)}
 
-    .tapHint{
+    .hint{
       position:absolute;
-      bottom: 12px;
+      bottom: 14px;
       left: 50%;
       transform: translateX(-50%);
-      font-size: 12px;
-      color: rgba(255,255,255,.85);
-      padding: 8px 12px;
+      padding: 9px 12px;
       border-radius: 999px;
       background: rgba(0,0,0,.25);
-      border: 1px solid rgba(255,255,255,.10);
+      border:1px solid rgba(255,255,255,.10);
       backdrop-filter: blur(10px);
+      font-size: 12px;
+      color: rgba(255,255,255,.9);
+      z-index: 5;
+      white-space:nowrap;
     }
 
-    .row{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 12px;
+    .float{
+      position:absolute;
+      font-weight: 900;
+      color: rgba(255,255,255,.95);
+      text-shadow: 0 14px 30px rgba(0,0,0,.55);
+      pointer-events:none;
+      animation: floatUp .85s ease forwards;
+      z-index:10;
     }
-
-    .stat{
-      padding: 12px 12px;
-      border-radius: 14px;
-      background: rgba(0,0,0,.20);
-      border: 1px solid rgba(255,255,255,.10);
+    @keyframes floatUp{
+      0%{opacity:0; transform: translate(-50%,-50%) scale(.85)}
+      12%{opacity:1}
+      100%{opacity:0; transform: translate(-50%,-125%) scale(1.08)}
     }
-    .stat .k{font-size:12px; color:var(--muted)}
-    .stat .v{font-size:16px; font-weight:800; margin-top:4px}
 
     .actions{
-      display:flex; gap:10px; margin-top: 12px;
+      display:flex;
+      gap:10px;
+      padding: 12px 12px 14px;
     }
     .btn{
       flex:1;
@@ -267,29 +432,98 @@
       border: 1px solid rgba(255,255,255,.14);
       background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
       color: var(--text);
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 12px 12px;
-      font-weight: 800;
-      letter-spacing:.2px;
-      box-shadow: 0 14px 30px rgba(0,0,0,.28);
+      font-weight: 900;
       cursor:pointer;
-      transition: transform .08s ease, filter .2s ease;
+      box-shadow: 0 14px 30px rgba(0,0,0,.28);
     }
-    .btn:active{transform: translateY(1px) scale(.995)}
     .btn.primary{
-      border-color: rgba(249,115,91,.35);
+      border-color: rgba(0,229,255,.26);
       background:
-        radial-gradient(1200px 260px at 30% 0%, rgba(249,115,91,.26), transparent 60%),
-        linear-gradient(180deg, rgba(249,115,91,.20), rgba(255,255,255,.06));
+        radial-gradient(1200px 260px at 30% 0%, rgba(0,229,255,.18), transparent 60%),
+        linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
     }
-    .btn.ghost{
+
+    /* ===== RANKING ===== */
+    .list{padding: 10px 12px 12px;}
+    .row{
+      display:grid;
+      grid-template-columns: 44px 1fr auto;
+      gap: 10px;
+      align-items:center;
+      padding: 10px 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,.08);
       background: rgba(0,0,0,.18);
+      margin-top: 8px;
     }
+    .rank{
+      width: 36px; height:36px;
+      border-radius: 12px;
+      display:grid; place-items:center;
+      border:1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      font-weight:900;
+    }
+    .name{
+      display:flex; flex-direction:column;
+      line-height:1.1;
+    }
+    .name b{font-size:14px}
+    .name small{font-size:12px; color:var(--muted); margin-top:2px}
+    .pts{font-weight:900; font-size:14px}
+
+    .row.me{
+      border-color: rgba(0,229,255,.26);
+      background:
+        radial-gradient(900px 120px at 20% 0%, rgba(0,229,255,.14), transparent 60%),
+        rgba(0,0,0,.18);
+    }
+
+    /* ===== Tabs ===== */
+    .tabs{
+      position: fixed;
+      left: 50%;
+      transform: translateX(-50%);
+      bottom: 12px;
+      width: min(640px, calc(100% - 24px));
+      padding: 10px 10px;
+      border-radius: 18px;
+      background: rgba(0,0,0,.40);
+      border: 1px solid rgba(255,255,255,.12);
+      backdrop-filter: blur(14px);
+      box-shadow: 0 20px 55px rgba(0,0,0,.55);
+      display:grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      z-index: 80;
+    }
+    .tab{
+      padding: 10px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.92);
+      font-weight: 900;
+      display:flex; gap:8px; align-items:center; justify-content:center;
+      cursor:pointer;
+      user-select:none;
+    }
+    .tab.active{
+      border-color: rgba(0,229,255,.22);
+      background:
+        radial-gradient(900px 120px at 20% 0%, rgba(0,229,255,.16), transparent 60%),
+        rgba(255,255,255,.06);
+    }
+
+    .screen{display:none;}
+    .screen.active{display:block;}
 
     .toast{
       position: fixed;
       left:50%;
-      bottom: 18px;
+      bottom: 92px;
       transform: translateX(-50%);
       background: rgba(0,0,0,.55);
       border: 1px solid rgba(255,255,255,.14);
@@ -302,200 +536,317 @@
       opacity:0;
       pointer-events:none;
       transition: opacity .22s ease, transform .22s ease;
-      z-index: 50;
+      z-index: 90;
     }
-    .toast.show{
-      opacity:1;
-      transform: translateX(-50%) translateY(-4px);
-    }
+    .toast.show{opacity:1; transform: translateX(-50%) translateY(-4px);}
 
-    /* floating +points */
-    .float{
-      position:absolute;
-      color: rgba(255,255,255,.95);
-      font-weight: 900;
-      text-shadow: 0 10px 25px rgba(0,0,0,.55);
-      pointer-events:none;
-      animation: floatUp .85s ease forwards;
-      z-index:10;
-    }
-    @keyframes floatUp{
-      0%{opacity:0; transform: translate(-50%,-50%) scale(.8)}
-      10%{opacity:1}
-      100%{opacity:0; transform: translate(-50%,-120%) scale(1.05)}
-    }
-
-    .footerNote{
-      margin-top: 10px;
-      color: var(--muted);
-      font-size: 12px;
-      line-height: 1.35;
-      text-align:center;
-    }
-    .link{
-      color: rgba(255,255,255,.92);
-      text-decoration: underline;
-      text-decoration-color: rgba(249,115,91,.5);
-      text-underline-offset: 3px;
-    }
+    /* tiny inline svg icons */
+    .svg{width:34px;height:34px;display:block}
+    .svg path, .svg circle, .svg rect { stroke-linecap: round; stroke-linejoin: round; }
 
     @media (max-width: 360px){
-      .ring{width: 240px; height:240px}
-      .orb{width:170px; height:170px}
+      .gameRow{grid-template-columns: 1fr 1fr 1fr}
+      .ring{width: 260px; height:260px}
+      .orb{width: 182px; height:182px}
     }
   </style>
 </head>
 
 <body>
+<div class="gridBg"></div>
+
+<div class="app">
   <div class="wrap">
-    <div class="top">
-      <div class="brand">
-        <div class="logo" aria-hidden="true"></div>
+
+    <div class="topbar">
+      <div class="title">
+        <div class="logo"></div>
         <div>
           <h1>Rico Arcade</h1>
-          <p>Tap Tap + Idle Drip • Daily Cap <b>500</b></p>
+          <p>Play • Earn • Climb</p>
+        </div>
+      </div>
+      <div class="status"><span class="dot" id="statusDot"></span><span id="status">Connecting…</span></div>
+    </div>
+
+    <!-- HOME (Arcade Lobby) -->
+    <div class="screen active" id="screen-home">
+      <div class="hero">
+        <div class="heroInner">
+          <div class="welcome">
+            <div class="welcomeLeft">
+              <b id="welcome">TELEGRAM ARCADE</b>
+              <span id="hello">Welcome</span>
+            </div>
+            <div class="chip" id="capChip">Daily Max: 500</div>
+          </div>
+
+          <div class="pointsBar">
+            <div>
+              <div class="label">YOUR POINTS</div>
+              <div class="num" id="points">0</div>
+            </div>
+            <div class="sub">
+              <div>Today: <b id="today">0/500</b></div>
+              <div style="margin-top:4px; color:var(--muted)">Points never expire</div>
+            </div>
+          </div>
+
+          <div class="miniMeta">
+            <div class="metaCard">
+              <div class="k">Idle drip</div>
+              <div class="v">+1 / 5s</div>
+            </div>
+            <div class="metaCard">
+              <div class="k">Status</div>
+              <div class="v" id="miniStatus">Live</div>
+            </div>
+          </div>
+
+          <div class="gameRow">
+            <div class="gameBtn tap" id="goTap">
+              <div class="iconRing">
+                <svg class="svg" viewBox="0 0 24 24" fill="none" stroke="rgba(0,229,255,.95)" stroke-width="2">
+                  <path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10Z"/>
+                  <path d="M9 12.5l1.8-1.8a2 2 0 0 1 2.8 0l.4.4a2 2 0 0 1 0 2.8L12.2 16"/>
+                  <path d="M10 16l-2 2"/>
+                </svg>
+              </div>
+              <div class="gTitle">TAP TAP FRENZY</div>
+              <div class="gSub">fast earn • auto add</div>
+            </div>
+
+            <div class="gameBtn plinko" id="goPlinko">
+              <div class="iconRing">
+                <svg class="svg" viewBox="0 0 24 24" fill="none" stroke="rgba(168,85,247,.95)" stroke-width="2">
+                  <path d="M4 5h16v14H4z"/>
+                  <path d="M8 9h0M12 9h0M16 9h0M10 12h0M14 12h0M8 15h0M12 15h0M16 15h0"/>
+                </svg>
+              </div>
+              <div class="gTitle">PLINKO FORTUNE</div>
+              <div class="gSub">coming next</div>
+            </div>
+
+            <div class="gameBtn pet" id="goPet">
+              <div class="iconRing">
+                <svg class="svg" viewBox="0 0 24 24" fill="none" stroke="rgba(34,197,94,.95)" stroke-width="2">
+                  <path d="M12 20c3 0 6-2 6-6 0-3-2-5-6-5s-6 2-6 5c0 4 3 6 6 6Z"/>
+                  <path d="M8.5 9.5 7 7.5M15.5 9.5 17 7.5"/>
+                  <path d="M10 14h4"/>
+                </svg>
+              </div>
+              <div class="gTitle">PET FEEDER</div>
+              <div class="gSub">coming next</div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="pill">
-        <div>
-          <small>Your Points</small><br>
-          <b id="points">0</b>
+      <div class="panel">
+        <div class="panelHd">
+          <div>
+            <b>Quick Tips</b><br>
+            <span>Tap points add instantly • no claim</span>
+          </div>
+          <span style="color:var(--muted); font-size:12px;">v1</span>
         </div>
-        <div style="text-align:right">
-          <small>Today</small><br>
-          <b id="today">0/500</b>
+        <div class="actions">
+          <button class="btn primary" id="btnStartTap">🎮 Start Tap Tap</button>
+          <button class="btn" id="btnRank">🏆 Ranking</button>
         </div>
       </div>
     </div>
 
-    <div class="grid">
-      <div class="card">
-        <div class="hd">
-          <div class="title">
-            <b>Tap the Orb</b>
-            <span>Earn by tapping + idle drip (+1 / 5s)</span>
+    <!-- GAME: Tap Tap -->
+    <div class="screen" id="screen-game">
+      <div class="panel">
+        <div class="panelHd">
+          <div>
+            <b>TAP TAP FRENZY</b><br>
+            <span>Auto-add points • server anti-cheat</span>
           </div>
-          <div class="chip"><span class="dot" id="statusDot"></span><span id="status">Connecting…</span></div>
+          <span style="color:var(--muted); font-size:12px;">Daily Max: <b id="cap2">500</b></span>
         </div>
 
-        <div class="content">
-          <div class="arena" id="arena">
-            <div class="ring" id="ring">
-              <svg viewBox="0 0 100 100" width="260" height="260" aria-hidden="true">
-                <defs>
-                  <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stop-color="rgba(249,115,91,0.95)"/>
-                    <stop offset="55%" stop-color="rgba(14,165,233,0.85)"/>
-                    <stop offset="100%" stop-color="rgba(255,255,255,0.25)"/>
-                  </linearGradient>
-                </defs>
-                <circle cx="50" cy="50" r="45" stroke="rgba(255,255,255,0.10)" stroke-width="6" fill="none"/>
-                <circle id="prog" cx="50" cy="50" r="45" stroke="url(#grad)" stroke-width="6" stroke-linecap="round" fill="none"
-                        stroke-dasharray="282.743" stroke-dashoffset="282.743"/>
-              </svg>
+        <div class="arena" id="arena">
+          <div class="ring">
+            <svg viewBox="0 0 100 100" width="290" height="290" aria-hidden="true">
+              <defs>
+                <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="rgba(0,229,255,0.95)"/>
+                  <stop offset="55%" stop-color="rgba(168,85,247,0.85)"/>
+                  <stop offset="100%" stop-color="rgba(255,255,255,0.20)"/>
+                </linearGradient>
+              </defs>
+              <circle cx="50" cy="50" r="45" stroke="rgba(255,255,255,0.10)" stroke-width="6" fill="none"/>
+              <circle id="prog" cx="50" cy="50" r="45" stroke="url(#grad)" stroke-width="6" stroke-linecap="round" fill="none"
+                      stroke-dasharray="282.743" stroke-dashoffset="282.743"/>
+            </svg>
 
-              <div class="orb" id="orb" role="button" aria-label="Tap to earn points">
-                <div class="score">
-                  <div class="big" id="runPoints">0</div>
-                  <div class="lbl">Run points (claim any time)</div>
-                </div>
+            <div class="orb" id="orb" role="button" aria-label="Tap to earn">
+              <div class="orbCore">
+                <div class="big" id="buffered">0</div>
+                <div class="lbl">Buffered taps (syncing…)</div>
               </div>
             </div>
-
-            <div class="tapHint">Tap fast • +1 every 5s (auto) • Claim when ready</div>
           </div>
 
-          <div class="row">
-            <div class="stat">
-              <div class="k">Idle drip</div>
-              <div class="v" id="drip">+1 / 5s</div>
-            </div>
-            <div class="stat">
-              <div class="k">Tap power</div>
-              <div class="v" id="tapPower">+1 / tap</div>
-            </div>
-          </div>
+          <div class="hint">Tap fast • +1 every 5s • No claim • Points never expire</div>
+        </div>
 
-          <div class="actions">
-            <button class="btn primary" id="claimBtn">Claim Run Points</button>
-            <button class="btn ghost" id="refreshBtn">Refresh</button>
-          </div>
-
-          <div class="footerNote">
-            Tip: Keep it fair — daily max <b>500</b>. Anti-cheat checks are server-side.
-            <br/>If you’re testing in browser (not Telegram), it runs in “demo mode”.
-          </div>
+        <div class="actions">
+          <button class="btn" id="btnHome">🏠 Home</button>
+          <button class="btn primary" id="btnRefresh">🔄 Refresh</button>
         </div>
       </div>
     </div>
+
+    <!-- RANKING -->
+    <div class="screen" id="screen-ranking">
+      <div class="panel">
+        <div class="panelHd">
+          <div>
+            <b>LEADERBOARD</b><br>
+            <span>Others masked • you show full</span>
+          </div>
+          <span style="color:var(--muted); font-size:12px;" id="rankMeta">—</span>
+        </div>
+
+        <div class="list" id="rankList"></div>
+
+        <div class="actions">
+          <button class="btn" id="btnHome2">🏠 Home</button>
+          <button class="btn primary" id="btnRankRefresh">🔄 Refresh</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" data-tab="home">🏠 Home</div>
+    <div class="tab" data-tab="game">🎮 Game</div>
+    <div class="tab" data-tab="ranking">🏆 Ranking</div>
   </div>
 
   <div class="toast" id="toast"></div>
+</div>
 
 <script>
-  // ========= Config =========
-  const API_BASE = "https://rico-arcade.pages.dev"; // same domain (Cloudflare Pages -> bind to Worker via route or proxy). For now keep empty.
+  // ✅ SET THIS to your Worker URL
+  // Example: const API_BASE = "https://rico-arcade-api.yourname.workers.dev";
+  const API_BASE = ""; // <-- IMPORTANT
+
   const DAILY_CAP = 500;
 
-  // ========= Telegram WebApp =========
   const tg = window.Telegram?.WebApp;
   if (tg) {
     tg.ready();
     tg.expand();
-    try { tg.setHeaderColor?.("#05070f"); tg.setBackgroundColor?.("#05070f"); } catch(e){}
+    try { tg.setHeaderColor?.("#040512"); tg.setBackgroundColor?.("#040512"); } catch(e){}
   }
 
-  // ========= UI refs =========
-  const $points = document.getElementById("points");
-  const $today = document.getElementById("today");
-  const $runPoints = document.getElementById("runPoints");
-  const $prog = document.getElementById("prog");
+  // refs
   const $status = document.getElementById("status");
   const $statusDot = document.getElementById("statusDot");
-  const $orb = document.getElementById("orb");
+  const $miniStatus = document.getElementById("miniStatus");
+
+  const $hello = document.getElementById("hello");
+  const $points = document.getElementById("points");
+  const $today = document.getElementById("today");
+
+  const $buffered = document.getElementById("buffered");
+  const $prog = document.getElementById("prog");
   const $arena = document.getElementById("arena");
+  const $orb = document.getElementById("orb");
+
+  const $rankList = document.getElementById("rankList");
+  const $rankMeta = document.getElementById("rankMeta");
+
   const $toast = document.getElementById("toast");
-  const $claimBtn = document.getElementById("claimBtn");
-  const $refreshBtn = document.getElementById("refreshBtn");
 
-  // ========= State =========
-  let me = {
-    telegram_id: null,
-    username: null,
-    points: 0,
-    earned_today: 0,
-    pending_run: 0
+  // navigation buttons
+  document.getElementById("goTap").onclick = () => setTab("game");
+  document.getElementById("btnStartTap").onclick = () => setTab("game");
+  document.getElementById("btnHome").onclick = () => setTab("home");
+  document.getElementById("btnHome2").onclick = () => setTab("home");
+  document.getElementById("btnRank").onclick = () => setTab("ranking");
+  document.getElementById("btnRankRefresh").onclick = () => loadRanking();
+  document.getElementById("btnRefresh").onclick = () => loadMe(true);
+
+  // placeholders
+  document.getElementById("goPlinko").onclick = () => toast("Plinko Fortune is coming next ✅");
+  document.getElementById("goPet").onclick = () => toast("Pet Feeder Quest is coming next ✅");
+
+  // tabs
+  const screens = {
+    home: document.getElementById("screen-home"),
+    game: document.getElementById("screen-game"),
+    ranking: document.getElementById("screen-ranking"),
   };
+  const tabEls = [...document.querySelectorAll(".tab")];
 
-  // local demo timers
-  let demoDripTimer = null;
-  let demoConnected = false;
+  function setTab(name){
+    Object.keys(screens).forEach(k => screens[k].classList.remove("active"));
+    screens[name].classList.add("active");
+    tabEls.forEach(t => t.classList.toggle("active", t.dataset.tab === name));
+    if (name === "ranking") loadRanking();
+  }
+  tabEls.forEach(t => t.addEventListener("click", ()=> setTab(t.dataset.tab)));
 
-  // ========= Helpers =========
-  const fmt = (n) => String(Math.max(0, Math.floor(n || 0)));
+  // state
+  let me = { telegram_id:null, username:"", points:0, earned_today:0 };
+  let bufferedTaps = 0;
+  let flushTimer = null;
+  let dripTimer = null;
+
+  const fmt = (n)=> String(Math.max(0, Math.floor(n||0)));
+
   function toast(msg){
     $toast.textContent = msg;
     $toast.classList.add("show");
     setTimeout(()=> $toast.classList.remove("show"), 1200);
   }
+
   function setStatus(ok, text){
     $status.textContent = text;
-    $statusDot.style.background = ok ? "var(--good)" : "var(--warn)";
+    $statusDot.style.background = ok ? "var(--c3)" : "var(--warn)";
     $statusDot.style.boxShadow = ok ? "0 0 14px rgba(34,197,94,.55)" : "0 0 14px rgba(245,158,11,.55)";
+    $miniStatus.textContent = ok ? "Live" : "Offline";
   }
+
   function setProgress(){
-    const circumference = 2 * Math.PI * 45; // ~282.743
+    const circumference = 2 * Math.PI * 45;
     const ratio = Math.min(1, (me.earned_today / DAILY_CAP));
     const offset = circumference * (1 - ratio);
     $prog.style.strokeDashoffset = String(offset);
   }
+
   function render(){
+    $hello.textContent = me.username ? `WELCOME, @${me.username}` : "WELCOME";
     $points.textContent = fmt(me.points);
     $today.textContent = `${fmt(me.earned_today)}/${DAILY_CAP}`;
-    $runPoints.textContent = fmt(me.pending_run);
+
+    $buffered.textContent = fmt(bufferedTaps);
     setProgress();
-    $claimBtn.disabled = me.pending_run <= 0 || me.earned_today >= DAILY_CAP;
+  }
+
+  async function api(path, body){
+    const initData = tg?.initData || "";
+    const res = await fetch(API_BASE + path, {
+      method: body ? "POST" : "GET",
+      headers: {
+        "content-type": "application/json",
+        "x-telegram-initdata": initData
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return await res.json();
+  }
+
+  function canEarnMore(){
+    return me.earned_today < DAILY_CAP;
   }
 
   function floatAt(x,y,text){
@@ -512,150 +863,131 @@
     try { tg?.HapticFeedback?.impactOccurred(type); } catch(e){}
   }
 
-  // ========= Game mechanics (client) =========
-  function canEarnMore(){
-    return me.earned_today < DAILY_CAP;
-  }
-
-  function addRunPoints(amount, x, y, label="+1"){
-    if (!canEarnMore()) {
-      toast("Daily cap reached.");
+  async function loadMe(silent=false){
+    if (!tg) {
+      setStatus(true, "Preview");
+      if (!silent) toast("Open inside Telegram to save points.");
+      render();
       return;
     }
-    // NOTE: In real mode, server will cap. This is just “pending run” client feel.
-    me.pending_run += amount;
-    render();
-    if (typeof x === "number" && typeof y === "number") floatAt(x,y,label);
+    try{
+      const r = await api("/api/me");
+      me.telegram_id = r.telegram_id;
+      me.username = r.username;
+      me.points = r.points;
+      me.earned_today = r.earned_today;
+      setStatus(true, "Connected");
+      render();
+
+      if (!dripTimer) dripTimer = setInterval(drip, 7000);
+      drip();
+    }catch(e){
+      setStatus(false, "Offline");
+      if (!silent) toast("Backend not reachable");
+    }
   }
 
-  // Tap handler
-  $orb.addEventListener("pointerdown", (ev) => {
+  async function drip(){
+    if (!tg) return;
+    try{
+      const r = await api("/api/drip", {});
+      me.points = r.points;
+      me.earned_today = r.earned_today;
+      render();
+    }catch(e){}
+  }
+
+  async function flushTaps(){
+    if (!tg) return;
+    if (bufferedTaps <= 0) return;
+
+    const send = Math.min(bufferedTaps, 60);
+    bufferedTaps -= send;
+    render();
+
+    try{
+      const r = await api("/api/tap/add", { amount: send });
+      me.points = r.points;
+      me.earned_today = r.earned_today;
+      render();
+      if (r.credited === 0 && send > 0) toast("Slow down 😄 (rate limit)");
+    }catch(e){
+      bufferedTaps += send;
+      render();
+      setStatus(false, "Offline");
+    }
+  }
+
+  function scheduleFlush(){
+    if (flushTimer) return;
+    flushTimer = setInterval(flushTaps, 600);
+  }
+
+  // Tap handler (auto add, no claim)
+  $orb.addEventListener("pointerdown", (ev)=>{
     ev.preventDefault();
+
     $orb.style.transform = "scale(0.985)";
     setTimeout(()=> $orb.style.transform = "scale(1)", 80);
+
+    if (!canEarnMore()) { toast("Daily cap reached."); return; }
 
     const rect = $arena.getBoundingClientRect();
     const x = ev.clientX - rect.left;
     const y = ev.clientY - rect.top;
 
-    if (tg) haptic("light");
-    addRunPoints(1, x, y, "+1");
+    bufferedTaps += 1;
+    render();
+    floatAt(x,y,"+1");
+    haptic("light");
+
+    scheduleFlush();
+    if (bufferedTaps >= 12) flushTaps();
   }, {passive:false});
 
-  // ========= Networking =========
-  async function api(path, body){
-    const initData = tg?.initData || ""; // signed payload in Telegram
-    const res = await fetch(API_BASE + path, {
-      method: body ? "POST" : "GET",
-      headers: {
-        "content-type": "application/json",
-        "x-telegram-initdata": initData
-      },
-      body: body ? JSON.stringify(body) : undefined
-    });
-    if (!res.ok) throw new Error(await res.text());
-    return await res.json();
+  // Leaderboard masking
+  function maskName(username){
+    if (!username) return "Player";
+    if (me.username && username.toLowerCase() === me.username.toLowerCase()) return username;
+    if (username.length <= 2) return username[0] + "*";
+    if (username.length <= 4) return username[0] + "**" + username[username.length-1];
+    return username.slice(0,2) + "**" + username.slice(-2);
   }
 
-  async function loadMe(){
-    // If not inside Telegram, run demo mode
+  async function loadRanking(){
     if (!tg) {
-      demoConnected = true;
-      setStatus(true, "Demo mode");
-      // fake user
-      me.telegram_id = "demo";
-      me.username = "demo";
-      me.points = me.points || 0;
-      me.earned_today = me.earned_today || 0;
-      render();
-      startDemoDrip();
+      $rankMeta.textContent = "Open inside Telegram for live data";
+      $rankList.innerHTML = "";
       return;
     }
-
     try{
-      const data = await api("/api/me");
-      me.telegram_id = data.telegram_id;
-      me.username = data.username;
-      me.points = data.points;
-      me.earned_today = data.earned_today;
-      me.pending_run = 0;
-      setStatus(true, "Connected");
-      render();
-      // ask server to apply drip (every refresh / open)
-      await applyDrip();
-      // schedule drip tick (server validated)
-      startServerDripLoop();
+      const r = await api("/api/leaderboard");
+      const rows = r.rows || [];
+      $rankMeta.textContent = `Players: ${rows.length}`;
+
+      $rankList.innerHTML = "";
+      rows.forEach((p, idx) => {
+        const isMe = String(p.telegram_id) === String(me.telegram_id);
+        const el = document.createElement("div");
+        el.className = "row" + (isMe ? " me" : "");
+        el.innerHTML = `
+          <div class="rank">${idx+1}</div>
+          <div class="name">
+            <b>${isMe ? (p.username || me.username || "You") : maskName(p.username || "")}</b>
+            <small>${isMe ? "This is you" : "Player"}</small>
+          </div>
+          <div class="pts">${fmt(p.points)}</div>
+        `;
+        $rankList.appendChild(el);
+      });
     }catch(e){
-      console.error(e);
-      setStatus(false, "Offline (tap still works)");
-      toast("Backend not reachable. You can still test UI.");
-      // Allow taps to feel good even offline, but won’t persist.
-      startDemoDrip();
+      toast("Failed to load ranking");
     }
   }
-
-  async function applyDrip(){
-    // Server adds +1 per 5s elapsed since last_drip_at, respecting daily cap.
-    try{
-      const data = await api("/api/drip", { });
-      me.points = data.points;
-      me.earned_today = data.earned_today;
-      render();
-    }catch(e){
-      console.warn("drip failed", e);
-    }
-  }
-
-  let serverDripTimer = null;
-  function startServerDripLoop(){
-    if (serverDripTimer) clearInterval(serverDripTimer);
-    // check every ~7s so we don’t spam; server calculates elapsed anyway
-    serverDripTimer = setInterval(applyDrip, 7000);
-  }
-
-  function startDemoDrip(){
-    if (demoDripTimer) return;
-    demoDripTimer = setInterval(()=>{
-      if (!canEarnMore()) return;
-      // demo drip adds directly to points (no server)
-      me.points += 1;
-      me.earned_today += 1;
-      render();
-    }, 5000);
-  }
-
-  async function claimRun(){
-    if (me.pending_run <= 0) return;
-    if (!tg) {
-      // demo claim
-      const grant = Math.min(me.pending_run, DAILY_CAP - me.earned_today);
-      me.points += grant;
-      me.earned_today += grant;
-      me.pending_run = 0;
-      render();
-      toast(`Claimed +${grant}`);
-      return;
-    }
-
-    try{
-      const data = await api("/api/tap/claim", { amount: me.pending_run });
-      me.points = data.points;
-      me.earned_today = data.earned_today;
-      me.pending_run = 0;
-      render();
-      toast(`Claimed +${data.claimed}`);
-      haptic("medium");
-    }catch(e){
-      console.error(e);
-      toast("Claim failed");
-    }
-  }
-
-  $claimBtn.addEventListener("click", claimRun);
-  $refreshBtn.addEventListener("click", loadMe);
 
   // boot
-  loadMe();
+  loadMe(true);
+  scheduleFlush();
 </script>
 </body>
 </html>
