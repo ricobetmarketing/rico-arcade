@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Telegram Arcade - Cyberpunk</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-dark: #020617;
+            --card-bg: rgba(30, 41, 59, 0.5);
+            --cyan-neon: #22d3ee;
+            --purple-neon: #a855f7;
+            --green-neon: #4ade80;
+            --text-main: #f8fafc;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(34, 211, 238, 0.1) 0%, transparent 50%),
+                linear-gradient(rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.9)),
+                url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+            color: var(--text-main);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Header */
+        header {
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        /* Points Display Section */
+        .points-panel {
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .points-label {
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.7rem;
+            color: var(--cyan-neon);
+        }
+
+        .points-value {
+            font-size: 3.5rem;
+            font-weight: 900;
+            text-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+            margin: 5px 0;
+        }
+
+        .points-bar {
+            width: 60%;
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            margin: 0 auto;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .points-bar::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            width: 70%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--cyan-neon), var(--purple-neon));
+        }
+
+        /* Game Grid (The Home Page) */
+        .game-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            padding: 20px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .game-card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 24px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            backdrop-filter: blur(10px);
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+
+        .game-card:active { transform: scale(0.97); }
+
+        .game-icon {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 2rem;
+            border: 2px solid;
+            box-shadow: 0 0 15px currentColor;
+        }
+
+        .tap-icon { color: var(--cyan-neon); }
+        .plinko-icon { color: var(--purple-neon); }
+        .pet-icon { color: var(--green-neon); }
+
+        .game-info h3 { margin: 0; font-size: 1.1rem; }
+        .game-info p { margin: 5px 0 0; font-size: 0.75rem; opacity: 0.6; }
+
+        /* Bottom Nav */
+        .bottom-nav {
+            background: rgba(15, 23, 42, 0.95);
+            display: flex;
+            justify-content: space-around;
+            padding: 15px 0 30px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.7rem;
+            color: #64748b;
+            text-decoration: none;
+        }
+
+        .nav-item.active { color: var(--cyan-neon); }
+        .nav-item i { font-size: 1.2rem; }
+
+        /* Game Screen Overlay */
+        .game-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-dark);
+            z-index: 100;
+            display: none;
+            flex-direction: column;
+        }
+
+        .back-btn {
+            padding: 20px;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="user-profile">
+            <i class="fa-solid fa-circle-user"></i>
+            <span id="username">WELCOME, @USER_ID</span>
+        </div>
+        <i class="fa-solid fa-gear"></i>
+    </header>
+
+    <div class="points-panel">
+        <div class="points-label">Your Points</div>
+        <div class="points-value" id="main-points">1250</div>
+        <div class="points-bar"></div>
+    </div>
+
+    <div class="game-grid" id="home-page">
+        <div class="game-card" onclick="openGame('tap')">
+            <div class="game-icon tap-icon"><i class="fa-solid fa-fingerprint"></i></div>
+            <div class="game-info">
+                <h3>TAP TAP FRENZY</h3>
+                <p>500 MAX / 5S INCREASE</p>
+            </div>
+        </div>
+
+        <div class="game-card" onclick="openGame('plinko')">
+            <div class="game-icon plinko-icon"><i class="fa-solid fa-dice"></i></div>
+            <div class="game-info">
+                <h3>PLINKO FORTUNE</h3>
+                <p>DROP & WIN BIG POINTS</p>
+            </div>
+        </div>
+
+        <div class="game-card" onclick="openGame('pet')">
+            <div class="game-icon pet-icon"><i class="fa-solid fa-cat"></i></div>
+            <div class="game-info">
+                <h3>PET FEEDER QUEST</h3>
+                <p>NURTURE & EARN REWARDS</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="game-overlay" id="game-overlay">
+        <div class="back-btn" onclick="closeGame()"><i class="fa-solid fa-chevron-left"></i></div>
+        <div id="game-content" style="flex-grow: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+            </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="#" class="nav-item active"><i class="fa-solid fa-house"></i>HOME</a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-trophy"></i>LEADERBOARD</a>
+        <a href="#" class="nav-item"><i class="fa-solid fa-sliders"></i>SETTINGS</a>
+    </nav>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        tg.expand();
+        document.getElementById('username').innerText = `WELCOME, @${tg.initDataUnsafe.user?.username || 'PLAYER'}`;
+
+        let points = 1250;
+
+        function openGame(type) {
+            const overlay = document.getElementById('game-overlay');
+            const content = document.getElementById('game-content');
+            overlay.style.display = 'flex';
+
+            if(type === 'tap') {
+                content.innerHTML = `
+                    <div class="game-icon tap-icon" id="big-tap" style="width:200px; height:200px; font-size:4rem;">
+                        <i class="fa-solid fa-fingerprint"></i>
+                    </div>
+                    <h2 style="margin-top:20px;">TAP TO EARN</h2>
+                    <p>Points: <span id="game-points">${points}</span></p>
+                `;
+                document.getElementById('big-tap').onclick = () => {
+                    points++;
+                    document.getElementById('game-points').innerText = points;
+                    document.getElementById('main-points').innerText = points;
+                    tg.HapticFeedback.impactOccurred('light');
+                };
+            } else {
+                content.innerHTML = `<h2>${type.toUpperCase()} COMING SOON</h2>`;
+            }
+        }
+
+        function closeGame() {
+            document.getElementById('game-overlay').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
