@@ -1,993 +1,271 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Rico Arcade</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Galactic Sync - TG Mini Game</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --tg-theme-bg-color: #0f172a;
+            --accent: #38bdf8;
+        }
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;700&display=swap" rel="stylesheet">
+        body {
+            margin: 0;
+            background-color: var(--tg-theme-bg-color);
+            color: white;
+            font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
 
-  <style>
-    :root{
-      --bg0:#040512;
-      --bg1:#060b18;
+        #header {
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            background: rgba(0,0,0,0.3);
+            z-index: 10;
+        }
 
-      --text:#eef2ff;
-      --muted:#aab3d4;
+        #game-container {
+            flex-grow: 1;
+            position: relative;
+            touch-action: none;
+        }
 
-      --stroke: rgba(255,255,255,.10);
-      --glass: rgba(255,255,255,.06);
-      --glass2: rgba(255,255,255,.09);
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
 
-      --c1:#00e5ff;   /* cyan */
-      --c2:#a855f7;   /* purple */
-      --c3:#22c55e;   /* green */
-      --c4:#f9735b;   /* rico orange */
-      --warn:#f59e0b;
+        .overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            width: 80%;
+            background: rgba(15, 23, 42, 0.9);
+            padding: 20px;
+            border-radius: 20px;
+            border: 2px solid var(--accent);
+            display: none;
+        }
 
-      --shadow: 0 18px 70px rgba(0,0,0,.65);
-      --r: 18px;
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 10px;
+            font-weight: bold;
+            margin-top: 15px;
+            width: 100%;
+        }
 
-      --cap: 500;
-    }
+        #xp-bar-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 6px;
+            background: #334155;
+        }
 
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{
-      margin:0;
-      font-family:"Baloo 2", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      color:var(--text);
-      background:
-        radial-gradient(1200px 800px at 50% -10%, rgba(0,229,255,.18), transparent 55%),
-        radial-gradient(1200px 800px at 70% 10%, rgba(168,85,247,.16), transparent 55%),
-        radial-gradient(1100px 700px at 20% 110%, rgba(34,197,94,.10), transparent 55%),
-        linear-gradient(180deg, var(--bg0), var(--bg1));
-      overflow:hidden;
-    }
-
-    /* subtle “server room” grid */
-    .gridBg{
-      position:fixed; inset:0;
-      pointer-events:none;
-      opacity:.20;
-      background:
-        linear-gradient(to right, rgba(255,255,255,.05) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(255,255,255,.05) 1px, transparent 1px);
-      background-size: 54px 54px;
-      mask-image: radial-gradient(closest-side at 50% 30%, black 35%, transparent 85%);
-    }
-
-    .app{
-      height: 100vh;
-      display:flex;
-      flex-direction:column;
-    }
-
-    .wrap{
-      flex:1;
-      overflow:auto;
-      -webkit-overflow-scrolling: touch;
-      padding: 14px 14px 96px;
-      padding-bottom: calc(96px + env(safe-area-inset-bottom));
-      max-width: 640px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    /* ===== TOP BAR ===== */
-    .topbar{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding: 6px 2px 12px;
-    }
-    .title{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      user-select:none;
-    }
-    .logo{
-      width:38px; height:38px;
-      border-radius: 14px;
-      border:1px solid rgba(255,255,255,.16);
-      background:
-        radial-gradient(circle at 30% 30%, rgba(0,229,255,.9), rgba(168,85,247,.55) 55%, rgba(0,0,0,.35) 100%);
-      box-shadow: 0 18px 50px rgba(0,229,255,.14), 0 18px 50px rgba(168,85,247,.10);
-      position:relative;
-      overflow:hidden;
-    }
-    .logo:after{
-      content:"";
-      position:absolute; inset:-55%;
-      background: conic-gradient(from 220deg, rgba(255,255,255,0), rgba(255,255,255,.35), rgba(255,255,255,0));
-      opacity:.35;
-      animation: spin 4.8s linear infinite;
-    }
-    @keyframes spin { to{ transform: rotate(360deg);} }
-
-    .title h1{margin:0; font-size:16px; line-height:1.1}
-    .title p{margin:2px 0 0; font-size:12px; color:var(--muted)}
-
-    .status{
-      display:flex; align-items:center; gap:8px;
-      padding: 8px 10px;
-      border-radius: 999px;
-      background: rgba(0,0,0,.30);
-      border:1px solid rgba(255,255,255,.10);
-      backdrop-filter: blur(12px);
-      font-size:12px;
-      color: rgba(255,255,255,.92);
-    }
-    .dot{
-      width:8px; height:8px; border-radius:999px;
-      background: var(--warn);
-      box-shadow: 0 0 14px rgba(245,158,11,.55);
-    }
-
-    /* ===== HERO (like your “Telegram Arcade”) ===== */
-    .hero{
-      position:relative;
-      border-radius: 24px;
-      padding: 16px 16px 14px;
-      background:
-        radial-gradient(1000px 260px at 10% 0%, rgba(0,229,255,.18), transparent 60%),
-        radial-gradient(1000px 260px at 90% 0%, rgba(168,85,247,.16), transparent 60%),
-        linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-
-    .hero:before{
-      content:"";
-      position:absolute; inset:-45%;
-      background: conic-gradient(from 200deg,
-        rgba(0,229,255,0),
-        rgba(0,229,255,.16),
-        rgba(168,85,247,.16),
-        rgba(0,229,255,0));
-      filter: blur(14px);
-      opacity:.9;
-      animation: glow 6.5s linear infinite;
-    }
-    @keyframes glow { to { transform: rotate(360deg);} }
-
-    .heroInner{position:relative; z-index:2;}
-
-    .welcome{
-      display:flex; align-items:center; justify-content:space-between;
-      gap: 10px;
-    }
-    .welcomeLeft b{
-      display:block;
-      font-size: 18px;
-      letter-spacing:.3px;
-    }
-    .welcomeLeft span{
-      display:block;
-      margin-top:2px;
-      color: var(--muted);
-      font-size: 12px;
-    }
-
-    .chip{
-      padding: 8px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(0,0,0,.25);
-      backdrop-filter: blur(12px);
-      font-size: 12px;
-      color: rgba(255,255,255,.92);
-      white-space: nowrap;
-    }
-
-    .pointsBar{
-      margin-top: 12px;
-      border-radius: 18px;
-      padding: 12px 12px;
-      background: rgba(0,0,0,.24);
-      border: 1px solid rgba(255,255,255,.10);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-    .pointsBar .label{
-      color: var(--muted);
-      font-size: 12px;
-    }
-    .pointsBar .num{
-      font-size: 34px;
-      font-weight: 900;
-      letter-spacing:.5px;
-      line-height: 1;
-      text-shadow: 0 14px 40px rgba(0,0,0,.6);
-    }
-    .pointsBar .sub{
-      font-size:12px;
-      color: rgba(255,255,255,.86);
-      text-align:right;
-    }
-
-    .miniMeta{
-      margin-top: 10px;
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap:10px;
-    }
-    .metaCard{
-      padding: 12px;
-      border-radius: 18px;
-      background: rgba(0,0,0,.22);
-      border: 1px solid rgba(255,255,255,.10);
-    }
-    .metaCard .k{font-size:12px; color:var(--muted)}
-    .metaCard .v{font-size:16px; font-weight:900; margin-top:4px}
-
-    /* ===== GAME ICONS (3 big buttons) ===== */
-    .gameRow{
-      margin-top: 14px;
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px;
-    }
-    .gameBtn{
-      position:relative;
-      border-radius: 22px;
-      padding: 14px 12px;
-      background: rgba(0,0,0,.24);
-      border: 1px solid rgba(255,255,255,.10);
-      box-shadow: 0 14px 40px rgba(0,0,0,.35);
-      cursor:pointer;
-      user-select:none;
-      overflow:hidden;
-      transition: transform .08s ease, filter .2s ease;
-    }
-    .gameBtn:active{transform: translateY(1px) scale(.99)}
-    .gameBtn:before{
-      content:"";
-      position:absolute; inset:-45%;
-      opacity:.65;
-      filter: blur(18px);
-    }
-    .gameBtn.tap:before{
-      background: radial-gradient(circle at 40% 40%, rgba(0,229,255,.40), transparent 55%);
-    }
-    .gameBtn.plinko:before{
-      background: radial-gradient(circle at 40% 40%, rgba(168,85,247,.40), transparent 55%);
-    }
-    .gameBtn.pet:before{
-      background: radial-gradient(circle at 40% 40%, rgba(34,197,94,.32), transparent 55%);
-    }
-
-    .iconRing{
-      width: 64px; height: 64px;
-      border-radius: 999px;
-      margin: 0 auto;
-      display:grid; place-items:center;
-      border: 1px solid rgba(255,255,255,.14);
-      background: rgba(255,255,255,.06);
-      position:relative;
-      box-shadow: 0 0 0 1px rgba(255,255,255,.06) inset;
-    }
-    .iconRing:after{
-      content:"";
-      position:absolute; inset:-22%;
-      border-radius: 999px;
-      background: conic-gradient(from 210deg, rgba(0,229,255,0), rgba(0,229,255,.20), rgba(168,85,247,.18), rgba(0,229,255,0));
-      filter: blur(12px);
-      opacity:.8;
-      animation: spin 4.5s linear infinite;
-    }
-
-    .icon{
-      width: 34px; height: 34px;
-      position:relative;
-      z-index:2;
-    }
-
-    .gTitle{
-      margin-top: 10px;
-      text-align:center;
-      font-weight: 900;
-      letter-spacing:.2px;
-      font-size: 12px;
-      opacity:.95;
-    }
-    .gSub{
-      margin-top: 2px;
-      text-align:center;
-      font-size: 11px;
-      color: var(--muted);
-    }
-
-    /* ===== GAME PANEL (Tap Tap) ===== */
-    .panel{
-      margin-top: 12px;
-      border-radius: 24px;
-      background: linear-gradient(180deg, rgba(255,255,255,.09), rgba(255,255,255,.05));
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-    }
-    .panelHd{
-      padding: 12px 14px;
-      display:flex; align-items:flex-end; justify-content:space-between;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      background: radial-gradient(900px 240px at 20% 0%, rgba(0,229,255,.12), transparent 60%);
-    }
-    .panelHd b{font-size:15px}
-    .panelHd span{font-size:12px; color:var(--muted)}
-
-    .arena{
-      position:relative;
-      height: 380px;
-      display:grid;
-      place-items:center;
-      overflow:hidden;
-      user-select:none;
-      -webkit-tap-highlight-color: transparent;
-      background:
-        radial-gradient(900px 260px at 50% 115%, rgba(0,229,255,.14), transparent 60%),
-        radial-gradient(900px 260px at 50% 115%, rgba(168,85,247,.12), transparent 60%),
-        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
-    }
-
-    .ring{
-      width: 290px; height: 290px;
-      border-radius: 999px;
-      position:relative;
-      display:grid; place-items:center;
-      filter: drop-shadow(0 20px 50px rgba(0,0,0,.6));
-    }
-    .ring svg{position:absolute; inset:0; transform: rotate(-90deg);}
-
-    .orb{
-      width: 200px; height: 200px;
-      border-radius: 999px;
-      position:relative;
-      display:grid; place-items:center;
-      border:1px solid rgba(255,255,255,.22);
-      background:
-        radial-gradient(circle at 30% 30%, rgba(255,255,255,.20), rgba(255,255,255,0) 45%),
-        radial-gradient(circle at 35% 35%, rgba(0,229,255,.70), rgba(168,85,247,.55) 60%, rgba(0,0,0,.30) 100%);
-      box-shadow:
-        0 34px 90px rgba(0,229,255,.13),
-        0 34px 90px rgba(168,85,247,.10),
-        inset 0 0 0 1px rgba(255,255,255,.08);
-      transform: translateZ(0);
-      transition: transform .08s ease;
-    }
-
-    .orb:before{
-      content:"";
-      position:absolute; inset:-45%;
-      background: conic-gradient(from 210deg,
-        rgba(0,229,255,0),
-        rgba(0,229,255,.20),
-        rgba(168,85,247,.18),
-        rgba(0,229,255,0));
-      filter: blur(18px);
-      animation: glow 3.8s linear infinite;
-      opacity:.95;
-    }
-
-    .orbCore{
-      position:relative;
-      z-index:2;
-      padding: 12px 16px;
-      border-radius: 16px;
-      background: rgba(0,0,0,.22);
-      border: 1px solid rgba(255,255,255,.10);
-      backdrop-filter: blur(10px);
-      text-align:center;
-      min-width: 160px;
-    }
-    .orbCore .big{font-size: 32px; font-weight:900; line-height:1}
-    .orbCore .lbl{margin-top:5px; font-size:12px; color:var(--muted)}
-
-    .hint{
-      position:absolute;
-      bottom: 14px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 9px 12px;
-      border-radius: 999px;
-      background: rgba(0,0,0,.25);
-      border:1px solid rgba(255,255,255,.10);
-      backdrop-filter: blur(10px);
-      font-size: 12px;
-      color: rgba(255,255,255,.9);
-      z-index: 5;
-      white-space:nowrap;
-    }
-
-    .float{
-      position:absolute;
-      font-weight: 900;
-      color: rgba(255,255,255,.95);
-      text-shadow: 0 14px 30px rgba(0,0,0,.55);
-      pointer-events:none;
-      animation: floatUp .85s ease forwards;
-      z-index:10;
-    }
-    @keyframes floatUp{
-      0%{opacity:0; transform: translate(-50%,-50%) scale(.85)}
-      12%{opacity:1}
-      100%{opacity:0; transform: translate(-50%,-125%) scale(1.08)}
-    }
-
-    .actions{
-      display:flex;
-      gap:10px;
-      padding: 12px 12px 14px;
-    }
-    .btn{
-      flex:1;
-      appearance:none;
-      border: 1px solid rgba(255,255,255,.14);
-      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
-      color: var(--text);
-      border-radius: 16px;
-      padding: 12px 12px;
-      font-weight: 900;
-      cursor:pointer;
-      box-shadow: 0 14px 30px rgba(0,0,0,.28);
-    }
-    .btn.primary{
-      border-color: rgba(0,229,255,.26);
-      background:
-        radial-gradient(1200px 260px at 30% 0%, rgba(0,229,255,.18), transparent 60%),
-        linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.06));
-    }
-
-    /* ===== RANKING ===== */
-    .list{padding: 10px 12px 12px;}
-    .row{
-      display:grid;
-      grid-template-columns: 44px 1fr auto;
-      gap: 10px;
-      align-items:center;
-      padding: 10px 10px;
-      border-radius: 16px;
-      border: 1px solid rgba(255,255,255,.08);
-      background: rgba(0,0,0,.18);
-      margin-top: 8px;
-    }
-    .rank{
-      width: 36px; height:36px;
-      border-radius: 12px;
-      display:grid; place-items:center;
-      border:1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.06);
-      font-weight:900;
-    }
-    .name{
-      display:flex; flex-direction:column;
-      line-height:1.1;
-    }
-    .name b{font-size:14px}
-    .name small{font-size:12px; color:var(--muted); margin-top:2px}
-    .pts{font-weight:900; font-size:14px}
-
-    .row.me{
-      border-color: rgba(0,229,255,.26);
-      background:
-        radial-gradient(900px 120px at 20% 0%, rgba(0,229,255,.14), transparent 60%),
-        rgba(0,0,0,.18);
-    }
-
-    /* ===== Tabs ===== */
-    .tabs{
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 12px;
-      width: min(640px, calc(100% - 24px));
-      padding: 10px 10px;
-      border-radius: 18px;
-      background: rgba(0,0,0,.40);
-      border: 1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(14px);
-      box-shadow: 0 20px 55px rgba(0,0,0,.55);
-      display:grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 8px;
-      z-index: 80;
-    }
-    .tab{
-      padding: 10px 10px;
-      border-radius: 14px;
-      border: 1px solid rgba(255,255,255,.10);
-      background: rgba(255,255,255,.06);
-      color: rgba(255,255,255,.92);
-      font-weight: 900;
-      display:flex; gap:8px; align-items:center; justify-content:center;
-      cursor:pointer;
-      user-select:none;
-    }
-    .tab.active{
-      border-color: rgba(0,229,255,.22);
-      background:
-        radial-gradient(900px 120px at 20% 0%, rgba(0,229,255,.16), transparent 60%),
-        rgba(255,255,255,.06);
-    }
-
-    .screen{display:none;}
-    .screen.active{display:block;}
-
-    .toast{
-      position: fixed;
-      left:50%;
-      bottom: 92px;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,.55);
-      border: 1px solid rgba(255,255,255,.14);
-      color: rgba(255,255,255,.92);
-      padding: 10px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      backdrop-filter: blur(12px);
-      box-shadow: 0 16px 45px rgba(0,0,0,.45);
-      opacity:0;
-      pointer-events:none;
-      transition: opacity .22s ease, transform .22s ease;
-      z-index: 90;
-    }
-    .toast.show{opacity:1; transform: translateX(-50%) translateY(-4px);}
-
-    /* tiny inline svg icons */
-    .svg{width:34px;height:34px;display:block}
-    .svg path, .svg circle, .svg rect { stroke-linecap: round; stroke-linejoin: round; }
-
-    @media (max-width: 360px){
-      .gameRow{grid-template-columns: 1fr 1fr 1fr}
-      .ring{width: 260px; height:260px}
-      .orb{width: 182px; height:182px}
-    }
-  </style>
+        #xp-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: var(--accent);
+            transition: width 0.3s;
+        }
+    </style>
 </head>
-
 <body>
-<div class="gridBg"></div>
 
-<div class="app">
-  <div class="wrap">
-
-    <div class="topbar">
-      <div class="title">
-        <div class="logo"></div>
-        <div>
-          <h1>Rico Arcade</h1>
-          <p>Play • Earn • Climb</p>
-        </div>
-      </div>
-      <div class="status"><span class="dot" id="statusDot"></span><span id="status">Connecting…</span></div>
+    <div id="header">
+        <div>Score: <span id="scoreText">0</span></div>
+        <div>LVL: <span id="lvlText">1</span></div>
     </div>
 
-    <!-- HOME (Arcade Lobby) -->
-    <div class="screen active" id="screen-home">
-      <div class="hero">
-        <div class="heroInner">
-          <div class="welcome">
-            <div class="welcomeLeft">
-              <b id="welcome">TELEGRAM ARCADE</b>
-              <span id="hello">Welcome</span>
-            </div>
-            <div class="chip" id="capChip">Daily Max: 500</div>
-          </div>
+    <div id="game-container">
+        <canvas id="gameCanvas"></canvas>
+        <div id="xp-bar-container"><div id="xp-bar-fill"></div></div>
 
-          <div class="pointsBar">
-            <div>
-              <div class="label">YOUR POINTS</div>
-              <div class="num" id="points">0</div>
-            </div>
-            <div class="sub">
-              <div>Today: <b id="today">0/500</b></div>
-              <div style="margin-top:4px; color:var(--muted)">Points never expire</div>
-            </div>
-          </div>
-
-          <div class="miniMeta">
-            <div class="metaCard">
-              <div class="k">Idle drip</div>
-              <div class="v">+1 / 5s</div>
-            </div>
-            <div class="metaCard">
-              <div class="k">Status</div>
-              <div class="v" id="miniStatus">Live</div>
-            </div>
-          </div>
-
-          <div class="gameRow">
-            <div class="gameBtn tap" id="goTap">
-              <div class="iconRing">
-                <svg class="svg" viewBox="0 0 24 24" fill="none" stroke="rgba(0,229,255,.95)" stroke-width="2">
-                  <path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10Z"/>
-                  <path d="M9 12.5l1.8-1.8a2 2 0 0 1 2.8 0l.4.4a2 2 0 0 1 0 2.8L12.2 16"/>
-                  <path d="M10 16l-2 2"/>
-                </svg>
-              </div>
-              <div class="gTitle">TAP TAP FRENZY</div>
-              <div class="gSub">fast earn • auto add</div>
-            </div>
-
-            <div class="gameBtn plinko" id="goPlinko">
-              <div class="iconRing">
-                <svg class="svg" viewBox="0 0 24 24" fill="none" stroke="rgba(168,85,247,.95)" stroke-width="2">
-                  <path d="M4 5h16v14H4z"/>
-                  <path d="M8 9h0M12 9h0M16 9h0M10 12h0M14 12h0M8 15h0M12 15h0M16 15h0"/>
-                </svg>
-              </div>
-              <div class="gTitle">PLINKO FORTUNE</div>
-              <div class="gSub">coming next</div>
-            </div>
-
-            <div class="gameBtn pet" id="goPet">
-              <div class="iconRing">
-                <svg class="svg" viewBox="0 0 24 24" fill="none" stroke="rgba(34,197,94,.95)" stroke-width="2">
-                  <path d="M12 20c3 0 6-2 6-6 0-3-2-5-6-5s-6 2-6 5c0 4 3 6 6 6Z"/>
-                  <path d="M8.5 9.5 7 7.5M15.5 9.5 17 7.5"/>
-                  <path d="M10 14h4"/>
-                </svg>
-              </div>
-              <div class="gTitle">PET FEEDER</div>
-              <div class="gSub">coming next</div>
-            </div>
-          </div>
+        <div id="menuOverlay" class="overlay" style="display: block;">
+            <h1 id="menuTitle">GALACTIC SYNC</h1>
+            <p id="menuDesc">Dodge the asteroids & collect Blue Orbs to earn credits for your account.</p>
+            <button onclick="startGame()">START MISSION</button>
         </div>
-      </div>
-
-      <div class="panel">
-        <div class="panelHd">
-          <div>
-            <b>Quick Tips</b><br>
-            <span>Tap points add instantly • no claim</span>
-          </div>
-          <span style="color:var(--muted); font-size:12px;">v1</span>
-        </div>
-        <div class="actions">
-          <button class="btn primary" id="btnStartTap">🎮 Start Tap Tap</button>
-          <button class="btn" id="btnRank">🏆 Ranking</button>
-        </div>
-      </div>
     </div>
-
-    <!-- GAME: Tap Tap -->
-    <div class="screen" id="screen-game">
-      <div class="panel">
-        <div class="panelHd">
-          <div>
-            <b>TAP TAP FRENZY</b><br>
-            <span>Auto-add points • server anti-cheat</span>
-          </div>
-          <span style="color:var(--muted); font-size:12px;">Daily Max: <b id="cap2">500</b></span>
-        </div>
-
-        <div class="arena" id="arena">
-          <div class="ring">
-            <svg viewBox="0 0 100 100" width="290" height="290" aria-hidden="true">
-              <defs>
-                <linearGradient id="grad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stop-color="rgba(0,229,255,0.95)"/>
-                  <stop offset="55%" stop-color="rgba(168,85,247,0.85)"/>
-                  <stop offset="100%" stop-color="rgba(255,255,255,0.20)"/>
-                </linearGradient>
-              </defs>
-              <circle cx="50" cy="50" r="45" stroke="rgba(255,255,255,0.10)" stroke-width="6" fill="none"/>
-              <circle id="prog" cx="50" cy="50" r="45" stroke="url(#grad)" stroke-width="6" stroke-linecap="round" fill="none"
-                      stroke-dasharray="282.743" stroke-dashoffset="282.743"/>
-            </svg>
-
-            <div class="orb" id="orb" role="button" aria-label="Tap to earn">
-              <div class="orbCore">
-                <div class="big" id="buffered">0</div>
-                <div class="lbl">Buffered taps (syncing…)</div>
-              </div>
-            </div>
-          </div>
-
-          <div class="hint">Tap fast • +1 every 5s • No claim • Points never expire</div>
-        </div>
-
-        <div class="actions">
-          <button class="btn" id="btnHome">🏠 Home</button>
-          <button class="btn primary" id="btnRefresh">🔄 Refresh</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- RANKING -->
-    <div class="screen" id="screen-ranking">
-      <div class="panel">
-        <div class="panelHd">
-          <div>
-            <b>LEADERBOARD</b><br>
-            <span>Others masked • you show full</span>
-          </div>
-          <span style="color:var(--muted); font-size:12px;" id="rankMeta">—</span>
-        </div>
-
-        <div class="list" id="rankList"></div>
-
-        <div class="actions">
-          <button class="btn" id="btnHome2">🏠 Home</button>
-          <button class="btn primary" id="btnRankRefresh">🔄 Refresh</button>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <div class="tabs">
-    <div class="tab active" data-tab="home">🏠 Home</div>
-    <div class="tab" data-tab="game">🎮 Game</div>
-    <div class="tab" data-tab="ranking">🏆 Ranking</div>
-  </div>
-
-  <div class="toast" id="toast"></div>
-</div>
 
 <script>
-  // ✅ SET THIS to your Worker URL
-  // Example: const API_BASE = "https://rico-arcade-api.yourname.workers.dev";
-  const API_BASE = ""; // <-- IMPORTANT
-
-  const DAILY_CAP = 500;
-
-  const tg = window.Telegram?.WebApp;
-  if (tg) {
-    tg.ready();
+    const tg = window.Telegram.WebApp;
     tg.expand();
-    try { tg.setHeaderColor?.("#040512"); tg.setBackgroundColor?.("#040512"); } catch(e){}
-  }
+    tg.enableClosingConfirmation();
 
-  // refs
-  const $status = document.getElementById("status");
-  const $statusDot = document.getElementById("statusDot");
-  const $miniStatus = document.getElementById("miniStatus");
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreText = document.getElementById('scoreText');
+    const lvlText = document.getElementById('lvlText');
+    const xpFill = document.getElementById('xp-bar-fill');
+    const menuOverlay = document.getElementById('menuOverlay');
 
-  const $hello = document.getElementById("hello");
-  const $points = document.getElementById("points");
-  const $today = document.getElementById("today");
+    let gameActive = false;
+    let score = 0;
+    let level = 1;
+    let xp = 0;
+    let player = { x: 0, y: 0, r: 15 };
+    let enemies = [];
+    let items = [];
+    let particles = [];
 
-  const $buffered = document.getElementById("buffered");
-  const $prog = document.getElementById("prog");
-  const $arena = document.getElementById("arena");
-  const $orb = document.getElementById("orb");
+    // Initialize Canvas
+    function resize() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight - 50;
+    }
+    window.addEventListener('resize', resize);
+    resize();
 
-  const $rankList = document.getElementById("rankList");
-  const $rankMeta = document.getElementById("rankMeta");
-
-  const $toast = document.getElementById("toast");
-
-  // navigation buttons
-  document.getElementById("goTap").onclick = () => setTab("game");
-  document.getElementById("btnStartTap").onclick = () => setTab("game");
-  document.getElementById("btnHome").onclick = () => setTab("home");
-  document.getElementById("btnHome2").onclick = () => setTab("home");
-  document.getElementById("btnRank").onclick = () => setTab("ranking");
-  document.getElementById("btnRankRefresh").onclick = () => loadRanking();
-  document.getElementById("btnRefresh").onclick = () => loadMe(true);
-
-  // placeholders
-  document.getElementById("goPlinko").onclick = () => toast("Plinko Fortune is coming next ✅");
-  document.getElementById("goPet").onclick = () => toast("Pet Feeder Quest is coming next ✅");
-
-  // tabs
-  const screens = {
-    home: document.getElementById("screen-home"),
-    game: document.getElementById("screen-game"),
-    ranking: document.getElementById("screen-ranking"),
-  };
-  const tabEls = [...document.querySelectorAll(".tab")];
-
-  function setTab(name){
-    Object.keys(screens).forEach(k => screens[k].classList.remove("active"));
-    screens[name].classList.add("active");
-    tabEls.forEach(t => t.classList.toggle("active", t.dataset.tab === name));
-    if (name === "ranking") loadRanking();
-  }
-  tabEls.forEach(t => t.addEventListener("click", ()=> setTab(t.dataset.tab)));
-
-  // state
-  let me = { telegram_id:null, username:"", points:0, earned_today:0 };
-  let bufferedTaps = 0;
-  let flushTimer = null;
-  let dripTimer = null;
-
-  const fmt = (n)=> String(Math.max(0, Math.floor(n||0)));
-
-  function toast(msg){
-    $toast.textContent = msg;
-    $toast.classList.add("show");
-    setTimeout(()=> $toast.classList.remove("show"), 1200);
-  }
-
-  function setStatus(ok, text){
-    $status.textContent = text;
-    $statusDot.style.background = ok ? "var(--c3)" : "var(--warn)";
-    $statusDot.style.boxShadow = ok ? "0 0 14px rgba(34,197,94,.55)" : "0 0 14px rgba(245,158,11,.55)";
-    $miniStatus.textContent = ok ? "Live" : "Offline";
-  }
-
-  function setProgress(){
-    const circumference = 2 * Math.PI * 45;
-    const ratio = Math.min(1, (me.earned_today / DAILY_CAP));
-    const offset = circumference * (1 - ratio);
-    $prog.style.strokeDashoffset = String(offset);
-  }
-
-  function render(){
-    $hello.textContent = me.username ? `WELCOME, @${me.username}` : "WELCOME";
-    $points.textContent = fmt(me.points);
-    $today.textContent = `${fmt(me.earned_today)}/${DAILY_CAP}`;
-
-    $buffered.textContent = fmt(bufferedTaps);
-    setProgress();
-  }
-
-  async function api(path, body){
-    const initData = tg?.initData || "";
-    const res = await fetch(API_BASE + path, {
-      method: body ? "POST" : "GET",
-      headers: {
-        "content-type": "application/json",
-        "x-telegram-initdata": initData
-      },
-      body: body ? JSON.stringify(body) : undefined
+    // Controls
+    let touchX = canvas.width / 2;
+    let touchY = canvas.height * 0.8;
+    canvas.addEventListener('touchmove', (e) => {
+        touchX = e.touches[0].clientX;
+        touchY = e.touches[0].clientY - 50;
     });
-    if (!res.ok) throw new Error(await res.text());
-    return await res.json();
-  }
 
-  function canEarnMore(){
-    return me.earned_today < DAILY_CAP;
-  }
-
-  function floatAt(x,y,text){
-    const el = document.createElement("div");
-    el.className = "float";
-    el.textContent = text;
-    el.style.left = x + "px";
-    el.style.top = y + "px";
-    $arena.appendChild(el);
-    setTimeout(()=> el.remove(), 900);
-  }
-
-  function haptic(type="light"){
-    try { tg?.HapticFeedback?.impactOccurred(type); } catch(e){}
-  }
-
-  async function loadMe(silent=false){
-    if (!tg) {
-      setStatus(true, "Preview");
-      if (!silent) toast("Open inside Telegram to save points.");
-      render();
-      return;
+    function spawnEnemy() {
+        if(!gameActive) return;
+        enemies.push({
+            x: Math.random() * canvas.width,
+            y: -50,
+            r: 10 + Math.random() * 20,
+            speed: 2 + (level * 0.5)
+        });
+        setTimeout(spawnEnemy, Math.max(300, 1000 - (level * 100)));
     }
-    try{
-      const r = await api("/api/me");
-      me.telegram_id = r.telegram_id;
-      me.username = r.username;
-      me.points = r.points;
-      me.earned_today = r.earned_today;
-      setStatus(true, "Connected");
-      render();
 
-      if (!dripTimer) dripTimer = setInterval(drip, 7000);
-      drip();
-    }catch(e){
-      setStatus(false, "Offline");
-      if (!silent) toast("Backend not reachable");
+    function spawnItem() {
+        if(!gameActive) return;
+        items.push({
+            x: Math.random() * canvas.width,
+            y: -50,
+            r: 8,
+            speed: 3
+        });
+        setTimeout(spawnItem, 2000);
     }
-  }
 
-  async function drip(){
-    if (!tg) return;
-    try{
-      const r = await api("/api/drip", {});
-      me.points = r.points;
-      me.earned_today = r.earned_today;
-      render();
-    }catch(e){}
-  }
-
-  async function flushTaps(){
-    if (!tg) return;
-    if (bufferedTaps <= 0) return;
-
-    const send = Math.min(bufferedTaps, 60);
-    bufferedTaps -= send;
-    render();
-
-    try{
-      const r = await api("/api/tap/add", { amount: send });
-      me.points = r.points;
-      me.earned_today = r.earned_today;
-      render();
-      if (r.credited === 0 && send > 0) toast("Slow down 😄 (rate limit)");
-    }catch(e){
-      bufferedTaps += send;
-      render();
-      setStatus(false, "Offline");
+    function startGame() {
+        score = 0;
+        level = 1;
+        xp = 0;
+        enemies = [];
+        items = [];
+        gameActive = true;
+        menuOverlay.style.display = 'none';
+        scoreText.innerText = score;
+        lvlText.innerText = level;
+        xpFill.style.width = '0%';
+        spawnEnemy();
+        spawnItem();
+        draw();
+        tg.HapticFeedback.notificationOccurred('success');
     }
-  }
 
-  function scheduleFlush(){
-    if (flushTimer) return;
-    flushTimer = setInterval(flushTaps, 600);
-  }
-
-  // Tap handler (auto add, no claim)
-  $orb.addEventListener("pointerdown", (ev)=>{
-    ev.preventDefault();
-
-    $orb.style.transform = "scale(0.985)";
-    setTimeout(()=> $orb.style.transform = "scale(1)", 80);
-
-    if (!canEarnMore()) { toast("Daily cap reached."); return; }
-
-    const rect = $arena.getBoundingClientRect();
-    const x = ev.clientX - rect.left;
-    const y = ev.clientY - rect.top;
-
-    bufferedTaps += 1;
-    render();
-    floatAt(x,y,"+1");
-    haptic("light");
-
-    scheduleFlush();
-    if (bufferedTaps >= 12) flushTaps();
-  }, {passive:false});
-
-  // Leaderboard masking
-  function maskName(username){
-    if (!username) return "Player";
-    if (me.username && username.toLowerCase() === me.username.toLowerCase()) return username;
-    if (username.length <= 2) return username[0] + "*";
-    if (username.length <= 4) return username[0] + "**" + username[username.length-1];
-    return username.slice(0,2) + "**" + username.slice(-2);
-  }
-
-  async function loadRanking(){
-    if (!tg) {
-      $rankMeta.textContent = "Open inside Telegram for live data";
-      $rankList.innerHTML = "";
-      return;
+    function gameOver() {
+        gameActive = false;
+        menuOverlay.style.display = 'block';
+        document.getElementById('menuTitle').innerText = "MISSION FAILED";
+        document.getElementById('menuDesc').innerText = `You earned ${score} platform credits!`;
+        tg.HapticFeedback.notificationOccurred('error');
+        
+        // Sync score to TG Main Button
+        tg.MainButton.text = "SYNC " + score + " CREDITS";
+        tg.MainButton.show();
     }
-    try{
-      const r = await api("/api/leaderboard");
-      const rows = r.rows || [];
-      $rankMeta.textContent = `Players: ${rows.length}`;
 
-      $rankList.innerHTML = "";
-      rows.forEach((p, idx) => {
-        const isMe = String(p.telegram_id) === String(me.telegram_id);
-        const el = document.createElement("div");
-        el.className = "row" + (isMe ? " me" : "");
-        el.innerHTML = `
-          <div class="rank">${idx+1}</div>
-          <div class="name">
-            <b>${isMe ? (p.username || me.username || "You") : maskName(p.username || "")}</b>
-            <small>${isMe ? "This is you" : "Player"}</small>
-          </div>
-          <div class="pts">${fmt(p.points)}</div>
-        `;
-        $rankList.appendChild(el);
-      });
-    }catch(e){
-      toast("Failed to load ranking");
+    // Sync to Website functionality
+    tg.MainButton.onClick(() => {
+        const user = tg.initDataUnsafe.user;
+        tg.showConfirm(`Transfer ${score} credits to ${user.first_name}'s web account?`, (ok) => {
+            if(ok) {
+                // Here you would normally fetch your API
+                tg.showPopup({ message: "Success! Your credits are synced." });
+                tg.MainButton.hide();
+            }
+        });
+    });
+
+    function draw() {
+        if(!gameActive) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Interpolate player movement
+        player.x += (touchX - player.x) * 0.2;
+        player.y += (touchY - player.y) * 0.2;
+
+        // Draw Player
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.r, 0, Math.PI*2);
+        ctx.fillStyle = '#38bdf8';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#38bdf8';
+        ctx.fill();
+        ctx.closePath();
+        ctx.shadowBlur = 0;
+
+        // Update & Draw Enemies
+        enemies.forEach((en, i) => {
+            en.y += en.speed;
+            ctx.beginPath();
+            ctx.arc(en.x, en.y, en.r, 0, Math.PI*2);
+            ctx.fillStyle = '#f43f5e';
+            ctx.fill();
+            
+            // Collision Detection
+            const dist = Math.hypot(player.x - en.x, player.y - en.y);
+            if(dist < player.r + en.r) gameOver();
+
+            if(en.y > canvas.height + 50) enemies.splice(i, 1);
+        });
+
+        // Update & Draw Items
+        items.forEach((it, i) => {
+            it.y += it.speed;
+            ctx.beginPath();
+            ctx.arc(it.x, it.y, it.r, 0, Math.PI*2);
+            ctx.fillStyle = '#fbbf24';
+            ctx.fill();
+
+            const dist = Math.hypot(player.x - it.x, player.y - it.y);
+            if(dist < player.r + it.r) {
+                items.splice(i, 1);
+                score += 10;
+                xp += 20;
+                scoreText.innerText = score;
+                tg.HapticFeedback.impactOccurred('light');
+                
+                if(xp >= 100) {
+                    level++;
+                    xp = 0;
+                    lvlText.innerText = level;
+                    tg.HapticFeedback.notificationOccurred('success');
+                }
+                xpFill.style.width = xp + '%';
+            }
+        });
+
+        requestAnimationFrame(draw);
     }
-  }
-
-  // boot
-  loadMe(true);
-  scheduleFlush();
 </script>
 </body>
 </html>
